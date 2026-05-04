@@ -28,7 +28,7 @@ curl -fsSL https://raw.githubusercontent.com/vituBIG/OctoJ/main/scripts/install.
 ### Windows (PowerShell)
 
 ```powershell
-iwr https://raw.githubusercontent.com/vituBIG/OctoJ/main/scripts/install.ps1 | iex
+& ([scriptblock]::Create((New-Object Net.WebClient).DownloadString('https://raw.githubusercontent.com/vituBIG/OctoJ/main/scripts/install.ps1')))
 ```
 
 > No administrator privileges required on any platform!

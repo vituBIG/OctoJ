@@ -1,0 +1,143 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.goos }}/${{ matrix.goarch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - goos: windows
+            goarch: amd64
+            runner: windows-latest
+            ext: .exe
+          - goos: linux
+            goarch: amd64
+            runner: ubuntu-latest
+            ext: ""
+          - goos: linux
+            goarch: arm64
+            runner: ubuntu-latest
+            ext: ""
+          - goos: darwin
+            goarch: amd64
+            runner: macos-latest
+            ext: ""
+          - goos: darwin
+            goarch: arm64
+            runner: macos-latest
+            ext: ""
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Get version from tag
+        id: version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          go build \
+            -ldflags="-s -w -X github.com/OctavoBit/octoj/internal/cli.currentVersion=${{ steps.version.outputs.VERSION }}" \
+            -o octoj-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} \
+            ./cmd/octoj
+
+      - name: Compute checksum (Linux/macOS)
+        if: matrix.runner != 'windows-latest'
+        run: |
+          sha256sum octoj-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} \
+            > octoj-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}.sha256
+
+      - name: Compute checksum (Windows)
+        if: matrix.runner == 'windows-latest'
+        shell: pwsh
+        run: |
+          $hash = Get-FileHash -Algorithm SHA256 "octoj-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
+          "$($hash.Hash)  octoj-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}" | Out-File -Encoding ascii "octoj-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: octoj-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            octoj-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}
+            octoj-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}.sha256
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true
+
+      - name: List release artifacts
+        run: ls -la dist/
+
+      - name: Create checksums file
+        run: |
+          cd dist
+          cat *.sha256 > checksums.txt
+          cat checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: OctoJ ${{ steps.version.outputs.VERSION }}
+          body: |
+            ## OctoJ ${{ steps.version.outputs.VERSION }}
+
+            See [CHANGELOG.md](https://github.com/OctavoBit/octoj/blob/main/CHANGELOG.md) for details.
+
+            ### Installation
+
+            **Linux/macOS:**
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/OctavoBit/octoj/main/scripts/install.sh | bash
+            ```
+
+            **Windows (PowerShell):**
+            ```powershell
+            iwr https://raw.githubusercontent.com/OctavoBit/octoj/main/scripts/install.ps1 | iex
+            ```
+
+            ### Downloads
+          files: |
+            dist/octoj-windows-amd64.exe
+            dist/octoj-linux-amd64
+            dist/octoj-linux-arm64
+            dist/octoj-darwin-amd64
+            dist/octoj-darwin-arm64
+            dist/checksums.txt
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.VERSION, '-') }}

@@ -37,22 +37,28 @@ func (p *Provider) Name() string {
 }
 
 // adoptiumRelease represents the Adoptium API release JSON structure.
+// feature_releases returns a "binaries" array; assets/latest returns "binary" — handle both.
 type adoptiumRelease struct {
 	ReleaseName string `json:"release_name"`
-	Binary      struct {
+	Binaries    []struct {
 		Package struct {
 			Link     string `json:"link"`
 			Checksum string `json:"checksum"`
 			Name     string `json:"name"`
 			Size     int64  `json:"size"`
 		} `json:"package"`
-		OS           string `json:"os"`
-		Architecture string `json:"architecture"`
+	} `json:"binaries"`
+	Binary struct {
+		Package struct {
+			Link     string `json:"link"`
+			Checksum string `json:"checksum"`
+			Name     string `json:"name"`
+			Size     int64  `json:"size"`
+		} `json:"package"`
 	} `json:"binary"`
 	VersionData struct {
-		Major    int    `json:"major"`
-		Semver   string `json:"semver"`
-		Optional string `json:"optional"`
+		Major  int    `json:"major"`
+		Semver string `json:"semver"`
 	} `json:"version_data"`
 }
 
@@ -137,15 +143,22 @@ func parseAdoptiumReleases(data []byte, os, arch string) ([]providers.JDKRelease
 
 	var releases []providers.JDKRelease
 	for _, r := range raw {
-		if r.Binary.Package.Link == "" {
+		// feature_releases uses "binaries" (array); assets/latest uses "binary" (object)
+		link, checksum, name, size := r.Binary.Package.Link, r.Binary.Package.Checksum, r.Binary.Package.Name, r.Binary.Package.Size
+		for _, b := range r.Binaries {
+			if b.Package.Link != "" {
+				link, checksum, name, size = b.Package.Link, b.Package.Checksum, b.Package.Name, b.Package.Size
+				break
+			}
+		}
+		if link == "" {
 			continue
 		}
 
 		major := r.VersionData.Major
 		semver := r.VersionData.Semver
 
-		// /assets/latest/ endpoint omits version_data — parse from release_name
-		// e.g. "jdk-21.0.3+9" → major=21, semver="21.0.3+9"
+		// assets/latest omits version_data — parse from release_name e.g. "jdk-21.0.3+9"
 		if major == 0 && r.ReleaseName != "" {
 			fmt.Sscanf(r.ReleaseName, "jdk-%d", &major)
 			if major > 0 && len(r.ReleaseName) > 4 {
@@ -159,11 +172,11 @@ func parseAdoptiumReleases(data []byte, os, arch string) ([]providers.JDKRelease
 			FullVersion:  semver,
 			OS:           os,
 			Arch:         arch,
-			URL:          r.Binary.Package.Link,
-			Checksum:     r.Binary.Package.Checksum,
+			URL:          link,
+			Checksum:     checksum,
 			ChecksumType: "sha256",
-			FileName:     r.Binary.Package.Name,
-			Size:         r.Binary.Package.Size,
+			FileName:     name,
+			Size:         size,
 		})
 	}
 

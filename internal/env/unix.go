@@ -20,6 +20,11 @@ type unixManager struct {
 	octojHome string
 }
 
+// NewManager returns the Unix (Linux/macOS) environment manager.
+func NewManager(octojHome string) (Manager, error) {
+	return &unixManager{octojHome: octojHome}, nil
+}
+
 func newUnixManager(octojHome string) Manager {
 	return &unixManager{octojHome: octojHome}
 }

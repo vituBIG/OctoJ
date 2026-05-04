@@ -15,6 +15,11 @@ type windowsManager struct {
 	octojHome string
 }
 
+// NewManager returns the Windows environment manager.
+func NewManager(octojHome string) (Manager, error) {
+	return &windowsManager{octojHome: octojHome}, nil
+}
+
 func newWindowsManager(octojHome string) Manager {
 	return &windowsManager{octojHome: octojHome}
 }

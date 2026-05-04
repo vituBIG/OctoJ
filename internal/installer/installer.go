@@ -141,14 +141,12 @@ func (inst *Installer) download(ctx context.Context, release *providers.JDKRelea
 
 	bar := p.AddBar(total,
 		mpb.PrependDecorators(
-			decor.Name("Downloading ", decor.WC{W: len("Downloading "), C: decor.DidentRight}),
-			decor.Name(fileName, decor.WCSyncSpace),
+			decor.Name("Downloading "),
+			decor.Name(fileName),
 		),
 		mpb.AppendDecorators(
-			decor.OnComplete(
-				decor.EwmaETA(decor.ET_STYLE_GO, 30), "done",
-			),
-			decor.Name(" ] "),
+			decor.OnComplete(decor.EwmaETA(decor.ET_STYLE_GO, 30), "done"),
+			decor.Name(" "),
 			decor.CountersKibiByte("% .2f / % .2f"),
 		),
 	)

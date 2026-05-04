@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/OctavoBit/octoj/internal/installer"
+	jdkreg "github.com/OctavoBit/octoj/internal/registry"
 	"github.com/OctavoBit/octoj/internal/storage"
 	"github.com/OctavoBit/octoj/pkg/providers"
 	"github.com/rs/zerolog/log"
@@ -69,8 +70,8 @@ func runUse(arg string) error {
 		}
 	}
 
-	registry := providers.NewRegistry()
-	if _, err := registry.Get(providerName); err != nil {
+	reg := jdkreg.New()
+	if _, err := reg.Get(providerName); err != nil {
 		return fmt.Errorf("unknown provider %q: %w", providerName, err)
 	}
 

@@ -7,8 +7,8 @@ import (
 
 	"github.com/OctavoBit/octoj/internal/installer"
 	"github.com/OctavoBit/octoj/internal/platform"
+	jdkreg "github.com/OctavoBit/octoj/internal/registry"
 	"github.com/OctavoBit/octoj/internal/storage"
-	"github.com/OctavoBit/octoj/pkg/providers"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
@@ -65,7 +65,7 @@ func runInstall(arg string, det *platform.Info, activate bool) error {
 		Str("arch", det.Arch).
 		Msg("installing JDK")
 
-	registry := providers.NewRegistry()
+	registry := jdkreg.New()
 	p, err := registry.Get(providerName)
 	if err != nil {
 		return fmt.Errorf("unknown provider %q: %w", providerName, err)

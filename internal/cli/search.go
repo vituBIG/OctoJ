@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/OctavoBit/octoj/internal/platform"
+	jdkreg "github.com/OctavoBit/octoj/internal/registry"
 	"github.com/OctavoBit/octoj/pkg/providers"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -62,7 +63,7 @@ type providerResult struct {
 }
 
 func runSearch(args []string, det *platform.Info) error {
-	registry := providers.NewRegistry()
+	registry := jdkreg.New()
 	ctx := context.Background()
 
 	if len(args) == 0 {

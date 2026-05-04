@@ -60,14 +60,15 @@ type adoptiumRelease struct {
 func (p *Provider) Search(ctx context.Context, version string, os string, arch string) ([]providers.JDKRelease, error) {
 	det := &platform.Info{OS: os, Arch: arch}
 
-	// /assets/latest/{version}/hotspot is simpler than feature_releases:
-	// no pagination needed, always returns the latest GA for each platform.
-	apiURL := fmt.Sprintf("%s/assets/latest/%s/hotspot", adoptiumBaseURL, version)
+	apiURL := fmt.Sprintf("%s/assets/feature_releases/%s/ga", adoptiumBaseURL, version)
 
 	params := url.Values{}
 	params.Set("os", det.AdoptiumOS())
 	params.Set("architecture", det.AdoptiumArch())
 	params.Set("image_type", "jdk")
+	params.Set("jvm_impl", "hotspot")
+	params.Set("page", "0")
+	params.Set("page_size", "5")
 
 	fullURL := apiURL + "?" + params.Encode()
 

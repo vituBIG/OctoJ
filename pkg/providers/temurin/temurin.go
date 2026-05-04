@@ -117,7 +117,7 @@ func (p *Provider) doRequest(ctx context.Context, apiURL string) ([]byte, error)
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Adoptium API returned HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		return nil, fmt.Errorf("Adoptium API returned HTTP %d: %s", resp.StatusCode, body)
 	}
 
 	return io.ReadAll(resp.Body)

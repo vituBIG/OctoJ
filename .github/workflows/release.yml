@@ -51,6 +51,9 @@ jobs:
         shell: bash
         run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
+      - name: Download dependencies
+        run: go mod tidy
+
       - name: Build binary
         env:
           GOOS: ${{ matrix.goos }}

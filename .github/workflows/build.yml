@@ -46,7 +46,7 @@ jobs:
           cache: true
 
       - name: Download dependencies
-        run: go mod download
+        run: go mod tidy
 
       - name: Run tests
         if: matrix.goarch == 'amd64'

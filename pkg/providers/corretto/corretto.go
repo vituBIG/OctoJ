@@ -86,29 +86,23 @@ func (p *Provider) GetRelease(ctx context.Context, version string, os string, ar
 func (p *Provider) buildRelease(ctx context.Context, version, os, arch string) (*providers.JDKRelease, error) {
 	det := &platform.Info{OS: os, Arch: arch}
 	downloadURL := buildCorrettoURL(version, det)
-	checksumURL := downloadURL + ".md5"
 
-	log.Debug().
-		Str("url", downloadURL).
-		Str("checksum_url", checksumURL).
-		Msg("checking Corretto availability")
+	log.Debug().Str("url", downloadURL).Msg("checking Corretto availability")
 
-	// Verify the release exists by checking the checksum URL
-	checksum, err := p.fetchText(ctx, checksumURL)
-	if err != nil {
+	// Verify the release exists via HEAD request on the download URL.
+	if err := p.checkExists(ctx, downloadURL); err != nil {
 		return nil, fmt.Errorf("Corretto JDK %s not available for %s/%s: %w", version, os, arch, err)
 	}
 
 	ext := det.ArchiveExt()
 	fileName := buildCorrettoFileName(version, det)
 
-	// Determine full version by following redirect or parsing filename
-	fullVersion := fmt.Sprintf("%s.latest", version)
+	// Try to get the MD5 checksum (best-effort — not all platforms provide it).
+	checksum, _ := p.fetchText(ctx, downloadURL+".md5")
 
-	// Try to get the actual version from the redirect
-	actualURL, err := p.resolveRedirect(ctx, downloadURL)
-	if err == nil {
-		// Extract version from URL like: amazon-corretto-21.0.3.9.1-linux-x64.tar.gz
+	// Determine full version by following redirect or parsing filename.
+	fullVersion := fmt.Sprintf("%s.latest", version)
+	if actualURL, err := p.resolveRedirect(ctx, downloadURL); err == nil {
 		fullVersion = extractVersionFromURL(actualURL, version)
 	}
 
@@ -140,6 +134,26 @@ func buildCorrettoURL(version string, det *platform.Info) string {
 func buildCorrettoFileName(version string, det *platform.Info) string {
 	return fmt.Sprintf("amazon-corretto-%s-%s-%s-jdk",
 		version, det.CorrettoArch(), det.CorrettoOS())
+}
+
+// checkExists verifies a URL exists via HEAD request (follows redirects).
+func (p *Provider) checkExists(ctx context.Context, url string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", "octoj/0.1.0 (https://github.com/vituBIG/OctoJ)")
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP %d", resp.StatusCode)
+	}
+	return nil
 }
 
 // fetchText fetches a text URL and returns its content.

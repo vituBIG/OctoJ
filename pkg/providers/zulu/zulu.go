@@ -137,6 +137,13 @@ func parseAzulPackages(data []byte, os, arch string) ([]providers.JDKRelease, er
 		}
 
 		fullVersion := pkg.ProductVersion
+		if fullVersion == "" && len(pkg.JavaVersion) > 0 {
+			parts := make([]string, len(pkg.JavaVersion))
+			for i, v := range pkg.JavaVersion {
+				parts[i] = fmt.Sprintf("%d", v)
+			}
+			fullVersion = strings.Join(parts, ".")
+		}
 		if fullVersion == "" {
 			fullVersion = majorVersion
 		}

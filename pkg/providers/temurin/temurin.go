@@ -68,9 +68,8 @@ func (p *Provider) Search(ctx context.Context, version string, os string, arch s
 	params.Set("architecture", det.AdoptiumArch())
 	params.Set("image_type", "jdk")
 	params.Set("jvm_impl", "hotspot")
-	params.Set("vendor", "eclipse")
 	params.Set("page", "0")
-	params.Set("page_size", "10")
+	params.Set("page_size", "5")
 
 	fullURL := apiURL + "?" + params.Encode()
 
@@ -131,6 +130,10 @@ func parseAdoptiumReleases(data []byte, os, arch string) ([]providers.JDKRelease
 	var raw []adoptiumRelease
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return nil, fmt.Errorf("failed to parse Adoptium response: %w", err)
+	}
+
+	if len(raw) == 0 {
+		log.Warn().Str("os", os).Str("arch", arch).Msg("Adoptium API returned 0 releases")
 	}
 
 	var releases []providers.JDKRelease

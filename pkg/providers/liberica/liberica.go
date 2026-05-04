@@ -66,9 +66,10 @@ func (p *Provider) Search(ctx context.Context, version string, osName string, ar
 	}
 	params.Set("os", det.BellSoftOS())
 	params.Set("arch", det.BellSoftArch())
+	params.Set("bitness", "64")
 	params.Set("bundle-type", "jdk")
 	params.Set("release-type", "ga")
-	params.Set("page-size", "10")
+	params.Set("page-size", "5")
 
 	apiURL := bellsoftBaseURL + "?" + params.Encode()
 	log.Debug().Str("url", apiURL).Msg("calling BellSoft API")

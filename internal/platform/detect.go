@@ -109,7 +109,7 @@ func (i *Info) BellSoftArch() string {
 	case "arm64":
 		return "aarch64"
 	default:
-		return "x86_64"
+		return "x86"
 	}
 }
 

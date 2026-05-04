@@ -1,4 +1,4 @@
-// Package downloader provides utilities for downloading files with progress reporting.
+﻿// Package downloader provides utilities for downloading files with progress reporting.
 package downloader
 
 import (
@@ -30,7 +30,7 @@ type Options struct {
 // If the destination file already exists and has a non-zero size, the download is skipped.
 func Download(ctx context.Context, opts Options) error {
 	if opts.UserAgent == "" {
-		opts.UserAgent = "octoj/0.1.0 (https://github.com/OctavoBit/octoj)"
+		opts.UserAgent = "octoj/0.1.0 (https://github.com/vituBIG/OctoJ)"
 	}
 
 	// Skip if already downloaded

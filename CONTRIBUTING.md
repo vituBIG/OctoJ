@@ -1,4 +1,4 @@
-# Contributing to OctoJ
+﻿# Contributing to OctoJ
 
 Thank you for your interest in contributing to OctoJ! This document provides guidelines for contributing.
 
@@ -14,7 +14,7 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md). All contributo
 
 ### Reporting Bugs
 
-1. Search [existing issues](https://github.com/OctavoBit/octoj/issues) to avoid duplicates.
+1. Search [existing issues](https://github.com/vituBIG/OctoJ/issues) to avoid duplicates.
 2. Use the [bug report template](.github/ISSUE_TEMPLATE.md).
 3. Include `octoj doctor` output in your report.
 4. Specify your OS, architecture, and OctoJ version.
@@ -71,7 +71,7 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md). All contributo
 
 ```bash
 # Clone the repo
-git clone https://github.com/OctavoBit/octoj.git
+git clone https://github.com/vituBIG/OctoJ.git
 cd octoj
 
 # Download dependencies

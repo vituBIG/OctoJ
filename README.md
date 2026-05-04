@@ -1,4 +1,4 @@
-```
+﻿```
    ___  ___ _        _
   / _ \/ __| |_ ___ | |
  | (_) \__ \  _/ _ \| |
@@ -9,8 +9,8 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)](https://go.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](https://github.com/OctavoBit/octoj/releases)
-[![Build](https://github.com/OctavoBit/octoj/actions/workflows/build.yml/badge.svg)](https://github.com/OctavoBit/octoj/actions/workflows/build.yml)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](https://github.com/vituBIG/OctoJ/releases)
+[![Build](https://github.com/vituBIG/OctoJ/actions/workflows/build.yml/badge.svg)](https://github.com/vituBIG/OctoJ/actions/workflows/build.yml)
 
 **OctoJ** is a fast, multi-platform Java JDK version manager inspired by `nvm`, `jabba`, and `sdkman`.
 Install, switch, and manage multiple JDK versions across Temurin, Corretto, Zulu, and Liberica — all from a single CLI tool.
@@ -22,13 +22,13 @@ Install, switch, and manage multiple JDK versions across Temurin, Corretto, Zulu
 ### Linux / macOS
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OctavoBit/octoj/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/vituBIG/OctoJ/main/scripts/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-iwr https://raw.githubusercontent.com/OctavoBit/octoj/main/scripts/install.ps1 | iex
+iwr https://raw.githubusercontent.com/vituBIG/OctoJ/main/scripts/install.ps1 | iex
 ```
 
 > No administrator privileges required on any platform!
@@ -226,7 +226,7 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 
 ```bash
 # Clone and build
-git clone https://github.com/OctavoBit/octoj.git
+git clone https://github.com/vituBIG/OctoJ.git
 cd octoj
 go mod download
 go build ./cmd/octoj

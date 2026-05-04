@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     OctoJ installer for Windows.
@@ -6,17 +6,17 @@
     Downloads and installs the latest OctoJ release from GitHub.
     Does NOT require administrator privileges.
 .EXAMPLE
-    iwr https://raw.githubusercontent.com/OctavoBit/octoj/main/scripts/install.ps1 | iex
+    iwr https://raw.githubusercontent.com/vituBIG/OctoJ/main/scripts/install.ps1 | iex
 .EXAMPLE
     # Install specific version
     $env:OCTOJ_VERSION = "v0.1.0"
-    iwr https://raw.githubusercontent.com/OctavoBit/octoj/main/scripts/install.ps1 | iex
+    iwr https://raw.githubusercontent.com/vituBIG/OctoJ/main/scripts/install.ps1 | iex
 #>
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$REPO = "OctavoBit/octoj"
+$REPO = "vituBIG/OctoJ"
 $BINARY = "octoj.exe"
 $INSTALL_DIR = "$env:USERPROFILE\.octoj\bin"
 

@@ -1,4 +1,4 @@
-// Package installer handles JDK download, verification, extraction and activation.
+﻿// Package installer handles JDK download, verification, extraction and activation.
 package installer
 
 import (
@@ -115,7 +115,7 @@ func (inst *Installer) download(ctx context.Context, release *providers.JDKRelea
 		return "", fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
-	req.Header.Set("User-Agent", "octoj/0.1.0 (https://github.com/OctavoBit/octoj)")
+	req.Header.Set("User-Agent", "octoj/0.1.0 (https://github.com/vituBIG/OctoJ)")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

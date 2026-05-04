@@ -1,4 +1,4 @@
-// Package zulu implements the OctoJ provider for Azul Zulu JDK.
+﻿// Package zulu implements the OctoJ provider for Azul Zulu JDK.
 package zulu
 
 import (
@@ -101,7 +101,7 @@ func (p *Provider) doRequest(ctx context.Context, apiURL string) ([]byte, error)
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("User-Agent", "octoj/0.1.0 (https://github.com/OctavoBit/octoj)")
+	req.Header.Set("User-Agent", "octoj/0.1.0 (https://github.com/vituBIG/OctoJ)")
 	req.Header.Set("Accept", "application/json")
 
 	resp, err := p.client.Do(req)

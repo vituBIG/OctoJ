@@ -1,4 +1,4 @@
-// Package corretto implements the OctoJ provider for Amazon Corretto.
+﻿// Package corretto implements the OctoJ provider for Amazon Corretto.
 package corretto
 
 import (
@@ -148,7 +148,7 @@ func (p *Provider) fetchText(ctx context.Context, url string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("User-Agent", "octoj/0.1.0 (https://github.com/OctavoBit/octoj)")
+	req.Header.Set("User-Agent", "octoj/0.1.0 (https://github.com/vituBIG/OctoJ)")
 
 	resp, err := p.client.Do(req)
 	if err != nil {
@@ -174,7 +174,7 @@ func (p *Provider) resolveRedirect(ctx context.Context, url string) (string, err
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("User-Agent", "octoj/0.1.0 (https://github.com/OctavoBit/octoj)")
+	req.Header.Set("User-Agent", "octoj/0.1.0 (https://github.com/vituBIG/OctoJ)")
 
 	// Don't follow redirects automatically so we can see the final URL
 	client := &http.Client{

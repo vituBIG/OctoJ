@@ -1,4 +1,4 @@
-package cli
+﻿package cli
 
 import (
 	"context"
@@ -20,7 +20,7 @@ func newSelfUpdateCmd() *cobra.Command {
 		Short: "Update OctoJ to the latest version",
 		Long: `Check for a newer version of OctoJ and update if available.
 
-Downloads the latest release from GitHub (OctavoBit/octoj) and replaces
+Downloads the latest release from GitHub (vituBIG/OctoJ) and replaces
 the current binary.`,
 		Example: `  octoj self-update
   octoj self-update --prerelease`,
@@ -47,7 +47,7 @@ func runSelfUpdate(prerelease bool) error {
 		return fmt.Errorf("failed to create updater: %w", err)
 	}
 
-	latest, found, err := updater.DetectLatest(ctx, selfupdate.ParseSlug("OctavoBit/octoj"))
+	latest, found, err := updater.DetectLatest(ctx, selfupdate.ParseSlug("vituBIG/OctoJ"))
 	if err != nil {
 		return fmt.Errorf("failed to detect latest version: %w", err)
 	}

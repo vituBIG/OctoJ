@@ -1,10 +1,10 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # OctoJ installer for Linux and macOS
-# Usage: curl -fsSL https://raw.githubusercontent.com/OctavoBit/octoj/main/scripts/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/vituBIG/OctoJ/main/scripts/install.sh | bash
 
 set -euo pipefail
 
-REPO="OctavoBit/octoj"
+REPO="vituBIG/OctoJ"
 BINARY="octoj"
 INSTALL_DIR="${OCTOJ_INSTALL_DIR:-}"
 

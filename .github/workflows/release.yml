@@ -1,4 +1,4 @@
-name: Release
+﻿name: Release
 
 on:
   push:
@@ -58,7 +58,7 @@ jobs:
           CGO_ENABLED: 0
         run: |
           go build \
-            -ldflags="-s -w -X github.com/OctavoBit/octoj/internal/cli.currentVersion=${{ steps.version.outputs.VERSION }}" \
+            -ldflags="-s -w -X github.com/vituBIG/OctoJ/internal/cli.currentVersion=${{ steps.version.outputs.VERSION }}" \
             -o octoj-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} \
             ./cmd/octoj
 
@@ -117,18 +117,18 @@ jobs:
           body: |
             ## OctoJ ${{ steps.version.outputs.VERSION }}
 
-            See [CHANGELOG.md](https://github.com/OctavoBit/octoj/blob/main/CHANGELOG.md) for details.
+            See [CHANGELOG.md](https://github.com/vituBIG/OctoJ/blob/main/CHANGELOG.md) for details.
 
             ### Installation
 
             **Linux/macOS:**
             ```bash
-            curl -fsSL https://raw.githubusercontent.com/OctavoBit/octoj/main/scripts/install.sh | bash
+            curl -fsSL https://raw.githubusercontent.com/vituBIG/OctoJ/main/scripts/install.sh | bash
             ```
 
             **Windows (PowerShell):**
             ```powershell
-            iwr https://raw.githubusercontent.com/OctavoBit/octoj/main/scripts/install.ps1 | iex
+            iwr https://raw.githubusercontent.com/vituBIG/OctoJ/main/scripts/install.ps1 | iex
             ```
 
             ### Downloads

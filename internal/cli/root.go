@@ -1,4 +1,4 @@
-// Package cli implements the OctoJ command-line interface using Cobra.
+﻿// Package cli implements the OctoJ command-line interface using Cobra.
 package cli
 
 import (
@@ -25,7 +25,7 @@ func NewRootCmd() *cobra.Command {
 		Long: `OctoJ is a multi-platform Java JDK version manager.
 Manage multiple JDK versions across Temurin, Corretto, Zulu, and Liberica.
 
-Made with love by OctavoBit — https://github.com/OctavoBit/octoj`,
+Made with love by OctavoBit — https://github.com/vituBIG/OctoJ`,
 		Version: "0.1.0",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return initConfig(cmd)

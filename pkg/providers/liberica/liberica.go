@@ -39,21 +39,14 @@ func (p *Provider) Name() string {
 
 // libericaRelease represents a single release from the BellSoft API.
 type libericaRelease struct {
-	Version        string `json:"version"`
-	FeatureVersion int    `json:"featureVersion"`
-	InterimVersion int    `json:"interimVersion"`
-	UpdateVersion  int    `json:"updateVersion"`
-	PatchVersion   int    `json:"patchVersion"`
-	BuildVersion   int    `json:"buildVersion"`
-	DownloadURL    string `json:"downloadUrl"`
-	SHA1           string `json:"sha1"`
-	SHA256         string `json:"sha256"`
-	Filename       string `json:"filename"`
-	Size           int64  `json:"size"`
-	OS             string `json:"os"`
-	Arch           string `json:"architecture"`
-	BundleType     string `json:"bundleType"`
-	ReleaseType    string `json:"releaseType"`
+	Version            string `json:"version"`
+	FeatureVersion     int    `json:"featureVersion"`
+	DownloadURL        string `json:"downloadUrl"`
+	SHA1               string `json:"sha1"`
+	Filename           string `json:"filename"`
+	Size               int64  `json:"size"`
+	GA                 bool   `json:"GA"`
+	InstallationType   string `json:"installationType"` // "archive" or "installer"
 }
 
 // Search returns available Liberica JDK releases for the given version, OS and arch.
@@ -127,29 +120,20 @@ func parseLibericaReleases(data []byte, osName, arch string) ([]providers.JDKRel
 
 	var result []providers.JDKRelease
 	for _, r := range releases {
-		if r.DownloadURL == "" {
+		// Only include GA archive releases (skip installers like .msi and pre-releases)
+		if !r.GA || r.InstallationType != "archive" || r.DownloadURL == "" {
 			continue
 		}
 
-		// Prefer SHA256, fall back to SHA1
-		checksum := r.SHA256
-		checksumType := "sha256"
-		if checksum == "" {
-			checksum = r.SHA1
-			checksumType = "sha1"
-		}
-
-		majorVersion := fmt.Sprintf("%d", r.FeatureVersion)
-
 		result = append(result, providers.JDKRelease{
 			Provider:     providerName,
-			Version:      majorVersion,
+			Version:      fmt.Sprintf("%d", r.FeatureVersion),
 			FullVersion:  r.Version,
 			OS:           osName,
 			Arch:         arch,
 			URL:          r.DownloadURL,
-			Checksum:     checksum,
-			ChecksumType: checksumType,
+			Checksum:     r.SHA1,
+			ChecksumType: "sha1",
 			FileName:     r.Filename,
 			Size:         r.Size,
 		})

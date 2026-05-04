@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     OctoJ installer for Windows.
@@ -33,8 +33,8 @@ function Write-Banner {
 
 function Write-Step {
     param([string]$Message)
-    Write-Host "`n==> $Message" -ForegroundColor Blue -NoNewline
     Write-Host ""
+    Write-Host "==> $Message" -ForegroundColor Blue
 }
 
 function Write-Success {
@@ -59,11 +59,13 @@ function Get-LatestVersion {
 }
 
 function Get-Architecture {
-    $arch = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture
+    # Use PROCESSOR_ARCHITECTURE env var â€” works on all PowerShell versions
+    $arch = $env:PROCESSOR_ARCHITECTURE
     switch ($arch) {
-        "X64"   { return "amd64" }
-        "Arm64" { return "arm64" }
-        default { throw "Unsupported architecture: $arch" }
+        "AMD64"  { return "amd64" }
+        "ARM64"  { return "arm64" }
+        "x86"    { return "amd64" }   # treat 32-bit as 64-bit download
+        default  { return "amd64" }   # safe fallback
     }
 }
 
@@ -77,6 +79,7 @@ function Add-ToUserPath {
     param([string]$Directory)
 
     $currentPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    if (-not $currentPath) { $currentPath = "" }
     $dirs = $currentPath -split ";"
 
     if ($dirs -notcontains $Directory) {
@@ -84,11 +87,9 @@ function Add-ToUserPath {
         [System.Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
         $env:PATH = "$Directory;$env:PATH"
         Write-Success "Added $Directory to user PATH"
-        return $true
     }
     else {
         Write-Host "  $Directory already in PATH" -ForegroundColor Gray
-        return $false
     }
 }
 
@@ -127,16 +128,14 @@ function Main {
 
     try {
         # Download binary
-        $progressPreference = 'Continue'
         Invoke-WebRequest -Uri $downloadUrl -OutFile $tmpFile -UseBasicParsing
+        Write-Success "Downloaded"
 
-        Write-Success "Downloaded to temporary location"
-
-        # Verify checksum
+        # Verify checksum (best-effort)
         Write-Step "Verifying checksum"
         try {
-            $checksumResponse = Invoke-WebRequest -Uri $checksumUrl -UseBasicParsing
-            $expectedChecksum = ($checksumResponse.Content -split '\s+')[0].Trim().ToLower()
+            $checksumContent = (Invoke-WebRequest -Uri $checksumUrl -UseBasicParsing).Content
+            $expectedChecksum = ($checksumContent -split '\s+')[0].Trim().ToLower()
             $actualChecksum = Get-FileHash256 -FilePath $tmpFile
 
             if ($expectedChecksum -eq $actualChecksum) {
@@ -147,10 +146,8 @@ function Main {
             }
         }
         catch {
-            if ($_.Exception.Message -like "*Checksum mismatch*") {
-                throw
-            }
-            Write-Warn "Could not verify checksum (continuing anyway): $_"
+            if ($_.Exception.Message -like "*Checksum mismatch*") { throw }
+            Write-Warn "Could not verify checksum (continuing): $_"
         }
 
         # Install binary
@@ -161,7 +158,7 @@ function Main {
 
         # Add to PATH
         Write-Step "Configuring PATH"
-        Add-ToUserPath -Directory $INSTALL_DIR | Out-Null
+        Add-ToUserPath -Directory $INSTALL_DIR
 
         # Run octoj init
         Write-Step "Configuring environment"
@@ -172,19 +169,18 @@ function Main {
             Write-Warn "Automatic environment setup failed. Run 'octoj init --apply' manually."
         }
 
-        # Broadcast environment change
-        $code = @"
+        # Notify shell of environment change
+        try {
+            Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
-public class Win32 {
+public class Win32Env {
     [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)]
     public static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);
 }
-"@
-        Add-Type -TypeDefinition $code -ErrorAction SilentlyContinue
-        $result = [UIntPtr]::Zero
-        try {
-            [Win32]::SendMessageTimeout([IntPtr]0xffff, 0x001A, [UIntPtr]::Zero, "Environment", 2, 5000, [ref]$result) | Out-Null
+"@ -ErrorAction SilentlyContinue
+            $result = [UIntPtr]::Zero
+            [Win32Env]::SendMessageTimeout([IntPtr]0xffff, 0x001A, [UIntPtr]::Zero, "Environment", 2, 5000, [ref]$result) | Out-Null
         }
         catch { }
 
@@ -206,7 +202,9 @@ public class Win32 {
         if (Test-Path $tmpFile) {
             Remove-Item $tmpFile -Force -ErrorAction SilentlyContinue
         }
-        throw
+        Write-Host ""
+        Write-Host "Installation failed: $_" -ForegroundColor Red
+        exit 1
     }
 }
 

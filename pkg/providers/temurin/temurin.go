@@ -140,10 +140,22 @@ func parseAdoptiumReleases(data []byte, os, arch string) ([]providers.JDKRelease
 			continue
 		}
 
+		major := r.VersionData.Major
+		semver := r.VersionData.Semver
+
+		// /assets/latest/ endpoint omits version_data — parse from release_name
+		// e.g. "jdk-21.0.3+9" → major=21, semver="21.0.3+9"
+		if major == 0 && r.ReleaseName != "" {
+			fmt.Sscanf(r.ReleaseName, "jdk-%d", &major)
+			if major > 0 && len(r.ReleaseName) > 4 {
+				semver = r.ReleaseName[4:]
+			}
+		}
+
 		releases = append(releases, providers.JDKRelease{
 			Provider:     providerName,
-			Version:      fmt.Sprintf("%d", r.VersionData.Major),
-			FullVersion:  r.VersionData.Semver,
+			Version:      fmt.Sprintf("%d", major),
+			FullVersion:  semver,
 			OS:           os,
 			Arch:         arch,
 			URL:          r.Binary.Package.Link,

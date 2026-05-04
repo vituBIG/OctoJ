@@ -145,3 +145,14 @@ func (i *Info) ArchiveExt() string {
 func (i *Info) IsWindows() bool {
 	return i.OS == "windows"
 }
+
+// MajorVersion extracts the major version number from a version string.
+// "17.0.18+8" → "17", "21" → "21", "17+35" → "17"
+func MajorVersion(version string) string {
+	for i, c := range version {
+		if c == '.' || c == '+' {
+			return version[:i]
+		}
+	}
+	return version
+}

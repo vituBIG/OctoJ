@@ -171,7 +171,7 @@ func runSearch(args []string, det *platform.Info) error {
 	fmt.Printf("  %-12s  %-22s  %s\n", strings.Repeat("-", 12), strings.Repeat("-", 22), strings.Repeat("-", 30))
 
 	for _, r := range allReleases {
-		installCmd := fmt.Sprintf("octoj install %s@%s", r.Provider, r.Version)
+		installCmd := fmt.Sprintf("octoj install %s@%s", r.Provider, r.FullVersion)
 		fmt.Printf("  %-12s  %-22s  %s\n", r.Provider, r.FullVersion, installCmd)
 	}
 

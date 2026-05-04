@@ -74,12 +74,21 @@ func (p *Provider) Search(ctx context.Context, version string, os string, arch s
 
 // GetRelease returns the best matching Corretto release for the given version, OS and arch.
 func (p *Provider) GetRelease(ctx context.Context, version string, os string, arch string) (*providers.JDKRelease, error) {
-	releases, err := p.Search(ctx, version, os, arch)
+	major := platform.MajorVersion(version)
+	releases, err := p.searchVersion(ctx, major, os, arch)
 	if err != nil {
 		return nil, err
 	}
 	if len(releases) == 0 {
 		return nil, fmt.Errorf("no Corretto JDK %s release found for %s/%s", version, os, arch)
+	}
+	if version != major {
+		for _, r := range releases {
+			if r.FullVersion == version {
+				return &r, nil
+			}
+		}
+		return nil, fmt.Errorf("Corretto JDK %s not found for %s/%s", version, os, arch)
 	}
 	return &releases[0], nil
 }

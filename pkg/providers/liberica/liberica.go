@@ -75,15 +75,22 @@ func (p *Provider) Search(ctx context.Context, version string, osName string, ar
 
 // GetRelease returns the best matching Liberica release for the given version, OS and arch.
 func (p *Provider) GetRelease(ctx context.Context, version string, osName string, arch string) (*providers.JDKRelease, error) {
-	releases, err := p.Search(ctx, version, osName, arch)
+	major := platform.MajorVersion(version)
+	releases, err := p.Search(ctx, major, osName, arch)
 	if err != nil {
 		return nil, err
 	}
-
 	if len(releases) == 0 {
 		return nil, fmt.Errorf("no Liberica JDK %s release found for %s/%s", version, osName, arch)
 	}
-
+	if version != major {
+		for _, r := range releases {
+			if r.FullVersion == version {
+				return &r, nil
+			}
+		}
+		return nil, fmt.Errorf("Liberica JDK %s not found for %s/%s", version, osName, arch)
+	}
 	return &releases[0], nil
 }
 

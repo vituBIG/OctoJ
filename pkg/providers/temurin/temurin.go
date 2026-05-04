@@ -14,6 +14,16 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// isMajorOnly returns true if version has no dots or plus signs (e.g. "17", not "17.0.18+8").
+func isMajorOnly(version string) bool {
+	for _, c := range version {
+		if c == '.' || c == '+' {
+			return false
+		}
+	}
+	return true
+}
+
 const (
 	adoptiumBaseURL = "https://api.adoptium.net/v3"
 	providerName    = "temurin"
@@ -90,15 +100,46 @@ func (p *Provider) Search(ctx context.Context, version string, os string, arch s
 
 // GetRelease returns the best matching Temurin release for the given version, OS and arch.
 func (p *Provider) GetRelease(ctx context.Context, version string, os string, arch string) (*providers.JDKRelease, error) {
+	if !isMajorOnly(version) {
+		// Full version like "17.0.18+8" — use the release_name endpoint directly.
+		return p.getByReleaseName(ctx, "jdk-"+version, os, arch)
+	}
+
 	releases, err := p.Search(ctx, version, os, arch)
 	if err != nil {
 		return nil, err
 	}
-
 	if len(releases) == 0 {
 		return nil, fmt.Errorf("no Temurin JDK %s release found for %s/%s", version, os, arch)
 	}
+	return &releases[0], nil
+}
 
+// getByReleaseName fetches a specific Temurin release using the release_name API endpoint.
+func (p *Provider) getByReleaseName(ctx context.Context, releaseName, osName, arch string) (*providers.JDKRelease, error) {
+	det := &platform.Info{OS: osName, Arch: arch}
+
+	apiURL := fmt.Sprintf("%s/assets/release_name/%s", adoptiumBaseURL, url.PathEscape(releaseName))
+	params := url.Values{}
+	params.Set("os", det.AdoptiumOS())
+	params.Set("architecture", det.AdoptiumArch())
+	params.Set("image_type", "jdk")
+
+	fullURL := apiURL + "?" + params.Encode()
+	log.Debug().Str("url", fullURL).Msg("calling Adoptium release_name API")
+
+	data, err := p.doRequest(ctx, fullURL)
+	if err != nil {
+		return nil, err
+	}
+
+	releases, err := parseAdoptiumReleases(data, osName, arch)
+	if err != nil {
+		return nil, err
+	}
+	if len(releases) == 0 {
+		return nil, fmt.Errorf("Temurin release %s not found for %s/%s", releaseName, osName, arch)
+	}
 	return &releases[0], nil
 }
 

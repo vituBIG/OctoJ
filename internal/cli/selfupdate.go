@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const currentVersion = "0.1.0"
+var currentVersion = "dev"
 const githubRepo = "vituBIG/OctoJ"
 
 type githubRelease struct {

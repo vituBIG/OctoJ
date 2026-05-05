@@ -63,7 +63,7 @@ jobs:
           CGO_ENABLED: 0
         run: |
           go build \
-            -ldflags="-s -w -X github.com/vituBIG/OctoJ/internal/cli.currentVersion=${{ steps.version.outputs.VERSION }}" \
+            -ldflags="-s -w -X github.com/OctavoBit/octoj/internal/cli.currentVersion=${{ steps.version.outputs.VERSION }}" \
             -o octoj-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }} \
             ./cmd/octoj
 

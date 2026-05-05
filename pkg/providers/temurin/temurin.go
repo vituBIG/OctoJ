@@ -1,4 +1,4 @@
-﻿// Package temurin implements the OctoJ provider for Eclipse Temurin (Adoptium).
+// Package temurin implements the OctoJ provider for Eclipse Temurin (Adoptium).
 package temurin
 
 import (
@@ -124,7 +124,7 @@ func (p *Provider) getByReleaseName(ctx context.Context, releaseName, osName, ar
 	wantVersion := releaseName[len("jdk-"):]
 
 	var major int
-	fmt.Sscanf(releaseName, "jdk-%d", &major)
+	_, _ = fmt.Sscanf(releaseName, "jdk-%d", &major)
 	if major == 0 {
 		return nil, fmt.Errorf("cannot parse major version from release name %q", releaseName)
 	}
@@ -229,7 +229,7 @@ func parseAdoptiumReleases(data []byte, os, arch string) ([]providers.JDKRelease
 
 		// assets/latest omits version_data — parse from release_name e.g. "jdk-21.0.3+9"
 		if major == 0 && r.ReleaseName != "" {
-			fmt.Sscanf(r.ReleaseName, "jdk-%d", &major)
+			_, _ = fmt.Sscanf(r.ReleaseName, "jdk-%d", &major)
 			if major > 0 && len(r.ReleaseName) > 4 {
 				semver = r.ReleaseName[4:]
 			}

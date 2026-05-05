@@ -1,4 +1,4 @@
-﻿// Package downloader provides utilities for downloading files with progress reporting.
+// Package downloader provides utilities for downloading files with progress reporting.
 package downloader
 
 import (

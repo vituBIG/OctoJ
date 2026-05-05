@@ -1,4 +1,4 @@
-﻿// Package installer handles JDK download, verification, extraction and activation.
+// Package installer handles JDK download, verification, extraction and activation.
 package installer
 
 import (

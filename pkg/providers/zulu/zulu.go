@@ -1,4 +1,4 @@
-﻿// Package zulu implements the OctoJ provider for Azul Zulu JDK.
+// Package zulu implements the OctoJ provider for Azul Zulu JDK.
 package zulu
 
 import (

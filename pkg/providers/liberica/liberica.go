@@ -1,4 +1,4 @@
-﻿// Package liberica implements the OctoJ provider for BellSoft Liberica JDK.
+// Package liberica implements the OctoJ provider for BellSoft Liberica JDK.
 package liberica
 
 import (

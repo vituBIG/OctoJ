@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -82,6 +83,16 @@ func runPurge(force, keepBinary bool) error {
 
 	fmt.Println()
 
+	// Warn if Java processes are running — they may hold JDK files open.
+	if procs := runningJavaProcesses(); len(procs) > 0 {
+		fmt.Println("Warning: the following Java processes are running and may hold JDK files open.")
+		fmt.Println("Close them before purging, or the data directory will be renamed instead of deleted.")
+		for _, p := range procs {
+			fmt.Printf("  • %s\n", p)
+		}
+		fmt.Println()
+	}
+
 	// --- Confirm ---
 	if !force {
 		fmt.Print("This action is IRREVERSIBLE. Type \"yes\" to continue: ")
@@ -115,7 +126,23 @@ func runPurge(force, keepBinary bool) error {
 	if _, err := os.Stat(octojHome); os.IsNotExist(err) {
 		fmt.Println("  Directory does not exist, skipping.")
 	} else if err := os.RemoveAll(octojHome); err != nil {
-		return fmt.Errorf("failed to delete %s: %w", octojHome, err)
+		// On Windows a third-party process (IDE, language server) may be
+		// holding JDK files open. Rename the directory so it is out of the
+		// way and a fresh install is not blocked, then ask the user to delete
+		// it manually once those processes are closed.
+		if runtime.GOOS == "windows" && isFileLocked(err) {
+			oldDir := octojHome + ".old"
+			_ = os.RemoveAll(oldDir) // clear a previous leftover if any
+			if renameErr := os.Rename(octojHome, oldDir); renameErr == nil {
+				fmt.Printf("  Warning: some JDK files are locked by a running process.\n")
+				fmt.Printf("  Directory renamed to: %s\n", oldDir)
+				fmt.Printf("  Delete it manually after closing all Java processes (IDEs, terminals with Java, etc.).\n")
+			} else {
+				return fmt.Errorf("failed to delete %s (files are locked by another process — close all Java/IDE processes and retry): %w", octojHome, err)
+			}
+		} else {
+			return fmt.Errorf("failed to delete %s: %w", octojHome, err)
+		}
 	} else {
 		fmt.Println("  Done.")
 	}
@@ -143,6 +170,58 @@ func runPurge(force, keepBinary bool) error {
 	}
 
 	return nil
+}
+
+// runningJavaProcesses returns a short description of each running java/javaw
+// process. Returns nil if none are found or the check fails.
+func runningJavaProcesses() []string {
+	if runtime.GOOS != "windows" {
+		out, err := exec.Command("pgrep", "-a", "java").Output()
+		if err != nil {
+			return nil
+		}
+		var procs []string
+		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+			if line != "" {
+				procs = append(procs, line)
+			}
+		}
+		return procs
+	}
+
+	// Windows: use WMIC to list java/javaw processes
+	out, err := exec.Command("wmic", "process", "where",
+		"name='java.exe' or name='javaw.exe'",
+		"get", "ProcessId,CommandLine", "/format:list").Output()
+	if err != nil {
+		return nil
+	}
+
+	var procs []string
+	var pid, cmdLine string
+	for _, line := range strings.Split(string(out), "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "CommandLine=") {
+			cmdLine = strings.TrimPrefix(line, "CommandLine=")
+		} else if strings.HasPrefix(line, "ProcessId=") {
+			pid = strings.TrimPrefix(line, "ProcessId=")
+		}
+		if pid != "" && cmdLine != "" {
+			desc := fmt.Sprintf("PID %s: %s", pid, cmdLine)
+			if len(desc) > 120 {
+				desc = desc[:117] + "..."
+			}
+			procs = append(procs, desc)
+			pid, cmdLine = "", ""
+		}
+	}
+	return procs
+}
+
+// isFileLocked returns true when err indicates a file is locked by another
+// process (Windows error 32: ERROR_SHARING_VIOLATION).
+func isFileLocked(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "being used by another process")
 }
 
 // relocateBinaryOnWindows moves the running binary out of octojHome before
@@ -191,9 +270,8 @@ func relocateBinaryOnWindows(binaryPath, octojHome string, keepBinary bool) stri
 }
 
 // removeBinary deletes the running binary.
-// On Windows the binary is locked while running, so we schedule deletion via a
-// helper trick: rename to a .old file and mark it for deletion on next boot,
-// or just inform the user.
+// On Windows the binary is locked while running, so we rename it to .old and
+// inform the user.
 func removeBinary(binaryPath string) error {
 	binaryPath = filepath.Clean(binaryPath)
 

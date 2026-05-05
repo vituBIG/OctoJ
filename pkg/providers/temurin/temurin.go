@@ -115,32 +115,52 @@ func (p *Provider) GetRelease(ctx context.Context, version string, os string, ar
 	return &releases[0], nil
 }
 
-// getByReleaseName fetches a specific Temurin release using the release_name API endpoint.
+// getByReleaseName finds a specific Temurin release by paginating feature_releases.
+// The release_name API endpoint returns 404 even for valid releases, so we use
+// feature_releases and match by full version string instead.
 func (p *Provider) getByReleaseName(ctx context.Context, releaseName, osName, arch string) (*providers.JDKRelease, error) {
-	det := &platform.Info{OS: osName, Arch: arch}
+	wantVersion := releaseName[len("jdk-"):]
 
-	apiURL := fmt.Sprintf("%s/assets/release_name/%s", adoptiumBaseURL, url.PathEscape(releaseName))
+	var major int
+	fmt.Sscanf(releaseName, "jdk-%d", &major)
+	if major == 0 {
+		return nil, fmt.Errorf("cannot parse major version from release name %q", releaseName)
+	}
+
+	det := &platform.Info{OS: osName, Arch: arch}
+	apiURL := fmt.Sprintf("%s/assets/feature_releases/%d/ga", adoptiumBaseURL, major)
+
 	params := url.Values{}
 	params.Set("os", det.AdoptiumOS())
 	params.Set("architecture", det.AdoptiumArch())
 	params.Set("image_type", "jdk")
+	params.Set("jvm_impl", "hotspot")
+	params.Set("page_size", "20")
 
-	fullURL := apiURL + "?" + params.Encode()
-	log.Debug().Str("url", fullURL).Msg("calling Adoptium release_name API")
+	for page := 0; ; page++ {
+		params.Set("page", fmt.Sprintf("%d", page))
+		fullURL := apiURL + "?" + params.Encode()
+		log.Debug().Str("url", fullURL).Msg("searching Adoptium feature_releases for specific version")
 
-	data, err := p.doRequest(ctx, fullURL)
-	if err != nil {
-		return nil, err
+		data, err := p.doRequest(ctx, fullURL)
+		if err != nil {
+			return nil, err
+		}
+		releases, err := parseAdoptiumReleases(data, osName, arch)
+		if err != nil {
+			return nil, err
+		}
+		for i := range releases {
+			if releases[i].FullVersion == wantVersion {
+				return &releases[i], nil
+			}
+		}
+		if len(releases) < 20 {
+			break
+		}
 	}
 
-	releases, err := parseAdoptiumReleases(data, osName, arch)
-	if err != nil {
-		return nil, err
-	}
-	if len(releases) == 0 {
-		return nil, fmt.Errorf("Temurin release %s not found for %s/%s", releaseName, osName, arch)
-	}
-	return &releases[0], nil
+	return nil, fmt.Errorf("Temurin release %s not found for %s/%s", releaseName, osName, arch)
 }
 
 // doRequest performs an HTTP GET and returns the response body bytes.

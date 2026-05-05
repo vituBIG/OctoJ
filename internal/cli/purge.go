@@ -105,6 +105,12 @@ func runPurge(force, keepBinary bool) error {
 	}
 
 	// --- Step 2: Delete ~/.octoj/ ---
+	// On Windows the running executable is locked by the OS. If the binary lives
+	// inside octojHome, move it out first so RemoveAll can proceed.
+	if runtime.GOOS == "windows" {
+		binaryPath = relocateBinaryOnWindows(binaryPath, octojHome, keepBinary)
+	}
+
 	fmt.Printf("Deleting %s...\n", octojHome)
 	if _, err := os.Stat(octojHome); os.IsNotExist(err) {
 		fmt.Println("  Directory does not exist, skipping.")
@@ -137,6 +143,51 @@ func runPurge(force, keepBinary bool) error {
 	}
 
 	return nil
+}
+
+// relocateBinaryOnWindows moves the running binary out of octojHome before
+// RemoveAll is called. Windows locks running executables, so they cannot be
+// deleted (or included in a directory deletion) while the process is alive.
+// Returns the new path of the binary (may be unchanged if relocation was not
+// needed or failed).
+func relocateBinaryOnWindows(binaryPath, octojHome string, keepBinary bool) string {
+	absExe, err := filepath.Abs(binaryPath)
+	if err != nil {
+		return binaryPath
+	}
+	absHome, err := filepath.Abs(octojHome)
+	if err != nil {
+		return binaryPath
+	}
+
+	// Only act when the binary is actually inside octojHome.
+	if !strings.HasPrefix(strings.ToLower(absExe), strings.ToLower(absHome+string(os.PathSeparator))) {
+		return binaryPath
+	}
+
+	var destDir string
+	if keepBinary {
+		// User wants to keep the binary; move it to their home directory.
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return binaryPath
+		}
+		destDir = home
+	} else {
+		// We only need it out of the way temporarily; use the system temp dir.
+		destDir = os.TempDir()
+	}
+
+	dest := filepath.Join(destDir, filepath.Base(absExe))
+	if err := os.Rename(absExe, dest); err != nil {
+		log.Warn().Err(err).Str("src", absExe).Str("dst", dest).Msg("could not relocate binary before purge")
+		return binaryPath
+	}
+
+	if keepBinary {
+		fmt.Printf("  Binary moved to %s (kept as requested).\n", dest)
+	}
+	return dest
 }
 
 // removeBinary deletes the running binary.

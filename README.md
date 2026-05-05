@@ -96,6 +96,9 @@ octoj uninstall temurin@17.0.18+8
 
 # Clean download cache
 octoj cache clean
+
+# Remove OctoJ entirely (all JDKs + config)
+octoj purge
 ```
 
 ---
@@ -119,6 +122,9 @@ octoj cache clean
 | `octoj cache clean` | Clean the download cache |
 | `octoj cache list` | List cached downloads |
 | `octoj self-update` | Update OctoJ to the latest version |
+| `octoj purge` | Completely remove OctoJ and all installed JDKs |
+| `octoj purge --keep-binary` | Remove data but keep the `octoj` binary |
+| `octoj purge --force` | Skip confirmation prompt (dangerous!) |
 
 ### Global Flags
 

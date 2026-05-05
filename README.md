@@ -35,34 +35,67 @@ curl -fsSL https://raw.githubusercontent.com/vituBIG/OctoJ/main/scripts/install.
 
 ---
 
-## Quick Start
+## First-time setup
+
+Run this once after installing OctoJ. It sets `OCTOJ_HOME`, `JAVA_HOME`, and
+places OctoJ at the **front** of your user PATH so it wins over any other Java
+installation:
 
 ```bash
-# 1. Initialize OctoJ (set OCTOJ_HOME, JAVA_HOME, PATH)
 octoj init --apply
+```
 
-# 2. Search for available JDK versions
+> **Windows**: restart your terminal (or open a new one) after running this
+> command for the PATH changes to take effect.
+
+Verify everything is correct:
+
+```bash
+octoj doctor
+```
+
+If `doctor` reports that another Java is shadowing OctoJ (e.g. Eclipse Adoptium
+or Oracle JDK installed system-wide), remove its entry from
+**System Properties → Environment Variables → System variables → Path** and
+restart your terminal.
+
+---
+
+## Daily workflow
+
+```bash
+# Search available versions (all providers)
 octoj search 21
 
-# 3. Install a JDK (defaults to Temurin)
-octoj install 21
+# Search a specific provider
+octoj search temurin 21
+octoj search corretto@17
 
-# 4. Install from a specific provider
+# Install a JDK (Temurin is the default provider)
+octoj install 21
+octoj install temurin@21.0.3+9   # exact version
+
+# Install from another provider
 octoj install corretto@17
 octoj install zulu@11
 octoj install liberica@21
 
-# 5. Switch the active JDK
+# Switch the active JDK
 octoj use temurin@21
+octoj use corretto@17
 
-# 6. Check what's active
+# Confirm what is active
 octoj current
+java --version
 
-# 7. List all installed JDKs
+# List all installed JDKs
 octoj installed
 
-# 8. Verify your setup
-octoj doctor
+# Remove a JDK
+octoj uninstall temurin@17.0.18+8
+
+# Clean download cache
+octoj cache clean
 ```
 
 ---

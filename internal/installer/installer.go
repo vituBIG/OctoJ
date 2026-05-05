@@ -48,9 +48,17 @@ func (inst *Installer) Install(ctx context.Context, release *providers.JDKReleas
 	}()
 
 	// Step 2: Verify checksum
-	if release.Checksum != "" {
+	if release.Checksum != "" || release.ChecksumLink != "" {
 		fmt.Print("Verifying checksum... ")
-		if err := inst.verifyChecksum(archivePath, release.Checksum, release.ChecksumType); err != nil {
+		expected := release.Checksum
+		if release.ChecksumLink != "" {
+			if fetched, err := fetchChecksumFromURL(ctx, release.ChecksumLink); err == nil {
+				expected = fetched
+			} else {
+				log.Debug().Err(err).Msg("failed to fetch checksum_link, falling back to API checksum")
+			}
+		}
+		if err := inst.verifyChecksum(archivePath, expected, release.ChecksumType); err != nil {
 			fmt.Println("FAILED")
 			return fmt.Errorf("checksum verification failed: %w", err)
 		}
@@ -172,6 +180,32 @@ func (inst *Installer) download(ctx context.Context, release *providers.JDKRelea
 	}
 
 	return destPath, nil
+}
+
+// fetchChecksumFromURL downloads a .sha256 file and returns the hash.
+// Handles both "<hash>" and "<hash>  <filename>" (sha256sum) formats.
+func fetchChecksumFromURL(ctx context.Context, link string) (string, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, link, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("checksum URL returned HTTP %d", resp.StatusCode)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	fields := strings.Fields(string(body))
+	if len(fields) == 0 {
+		return "", fmt.Errorf("empty checksum file")
+	}
+	return strings.ToLower(fields[0]), nil
 }
 
 // verifyChecksum checks the SHA-256 (or MD5) checksum of a file.

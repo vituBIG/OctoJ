@@ -11,7 +11,8 @@ type JDKRelease struct {
 	OS           string // "windows", "linux", "darwin"
 	Arch         string // "x64", "arm64"
 	URL          string // Download URL
-	Checksum     string // Expected checksum hex string
+	Checksum     string // Expected checksum hex string (may be stale in provider APIs)
+	ChecksumLink string // URL to authoritative .sha256 file; preferred over Checksum when set
 	ChecksumType string // "sha256", "md5", etc.
 	FileName     string // Original archive filename
 	Size         int64  // File size in bytes

@@ -50,20 +50,22 @@ func (p *Provider) Name() string {
 // feature_releases returns a "binaries" array; assets/latest returns "binary" — handle both.
 type adoptiumRelease struct {
 	ReleaseName string `json:"release_name"`
-	Binaries    []struct {
+	Binaries []struct {
 		Package struct {
-			Link     string `json:"link"`
-			Checksum string `json:"checksum"`
-			Name     string `json:"name"`
-			Size     int64  `json:"size"`
+			Link         string `json:"link"`
+			Checksum     string `json:"checksum"`
+			ChecksumLink string `json:"checksum_link"`
+			Name         string `json:"name"`
+			Size         int64  `json:"size"`
 		} `json:"package"`
 	} `json:"binaries"`
 	Binary struct {
 		Package struct {
-			Link     string `json:"link"`
-			Checksum string `json:"checksum"`
-			Name     string `json:"name"`
-			Size     int64  `json:"size"`
+			Link         string `json:"link"`
+			Checksum     string `json:"checksum"`
+			ChecksumLink string `json:"checksum_link"`
+			Name         string `json:"name"`
+			Size         int64  `json:"size"`
 		} `json:"package"`
 	} `json:"binary"`
 	VersionData struct {
@@ -211,14 +213,14 @@ func parseAdoptiumReleases(data []byte, os, arch string) ([]providers.JDKRelease
 	var releases []providers.JDKRelease
 	for _, r := range raw {
 		// feature_releases uses "binaries" (array); assets/latest uses "binary" (object)
-		link, checksum, name, size := r.Binary.Package.Link, r.Binary.Package.Checksum, r.Binary.Package.Name, r.Binary.Package.Size
+		pkg := r.Binary.Package
 		for _, b := range r.Binaries {
 			if b.Package.Link != "" {
-				link, checksum, name, size = b.Package.Link, b.Package.Checksum, b.Package.Name, b.Package.Size
+				pkg = b.Package
 				break
 			}
 		}
-		if link == "" {
+		if pkg.Link == "" {
 			continue
 		}
 
@@ -239,11 +241,12 @@ func parseAdoptiumReleases(data []byte, os, arch string) ([]providers.JDKRelease
 			FullVersion:  semver,
 			OS:           os,
 			Arch:         arch,
-			URL:          link,
-			Checksum:     checksum,
+			URL:          pkg.Link,
+			Checksum:     pkg.Checksum,
+			ChecksumLink: pkg.ChecksumLink,
 			ChecksumType: "sha256",
-			FileName:     name,
-			Size:         size,
+			FileName:     pkg.Name,
+			Size:         pkg.Size,
 		})
 	}
 

@@ -45,7 +45,10 @@ Downloads the binary for the current platform and replaces the running executabl
 }
 
 func runSelfUpdate() error {
-	fmt.Printf("OctoJ current version: v%s\n", currentVersion)
+	// Normalize: ldflags may inject "v0.1.x" or "0.1.x"; strip prefix for display/compare.
+	current := strings.TrimPrefix(currentVersion, "v")
+
+	fmt.Printf("OctoJ current version: v%s\n", current)
 	fmt.Println("Checking for updates...")
 
 	ctx := context.Background()
@@ -56,12 +59,12 @@ func runSelfUpdate() error {
 	}
 
 	latest := strings.TrimPrefix(release.TagName, "v")
-	if latest == currentVersion {
-		fmt.Printf("\nOctoJ is already up to date (v%s).\n", currentVersion)
+	if latest == current {
+		fmt.Printf("\nOctoJ is already up to date (v%s).\n", current)
 		return nil
 	}
 
-	fmt.Printf("\nNew version available: %s\n", release.TagName)
+	fmt.Printf("\nNew version available: %s (current: v%s)\n", release.TagName, current)
 	if release.Body != "" {
 		fmt.Printf("\nRelease notes:\n%s\n", release.Body)
 	}
@@ -109,7 +112,7 @@ func fetchLatestRelease(ctx context.Context) (*githubRelease, error) {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "octoj/"+currentVersion)
+	req.Header.Set("User-Agent", "octoj/"+strings.TrimPrefix(currentVersion, "v"))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -149,7 +152,7 @@ func downloadAndReplace(ctx context.Context, url, exePath string) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", "octoj/"+currentVersion)
+	req.Header.Set("User-Agent", "octoj/"+strings.TrimPrefix(currentVersion, "v"))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

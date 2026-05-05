@@ -138,8 +138,6 @@ func (m *unixManager) detectShell() (shellName, rcFile string, err error) {
 			rcFile = filepath.Join(home, ".bashrc")
 		}
 	default:
-		// Unknown shell, default to .profile
-		shellName = shellName
 		rcFile = filepath.Join(home, ".profile")
 	}
 

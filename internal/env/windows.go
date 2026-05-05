@@ -45,10 +45,9 @@ func (m *windowsManager) Plan() ([]string, error) {
 	}
 
 	currentPath := current["PATH"]
-	for _, addition := range pathAdditions {
-		if !containsPathEntry(currentPath, addition) {
-			changes = append(changes, fmt.Sprintf("ADD to PATH: %s", addition))
-		}
+	alreadyFirst := strings.HasPrefix(strings.ToLower(currentPath), strings.ToLower(pathAdditions[0]+";"))
+	if !alreadyFirst {
+		changes = append(changes, fmt.Sprintf("PREPEND to PATH (front): %s", strings.Join(pathAdditions, ";")))
 	}
 
 	return changes, nil
@@ -131,7 +130,9 @@ func setRegistryExpandString(name, value string) error {
 	return k.SetExpandStringValue(name, value)
 }
 
-// updatePath adds OctoJ entries to the user PATH in the registry.
+// updatePath ensures OctoJ entries are at the FRONT of the user PATH in the registry.
+// It removes any existing OctoJ entries first (wherever they are) then prepends them,
+// so they always beat system-level Java installations.
 func (m *windowsManager) updatePath() error {
 	k, err := registry.OpenKey(registry.CURRENT_USER, `Environment`, registry.QUERY_VALUE|registry.SET_VALUE)
 	if err != nil {
@@ -144,24 +145,33 @@ func (m *windowsManager) updatePath() error {
 		return fmt.Errorf("failed to read PATH: %w", err)
 	}
 
-	additions := []string{`%OCTOJ_HOME%\bin`, `%JAVA_HOME%\bin`}
-	newPath := currentPath
+	octojEntries := []string{`%OCTOJ_HOME%\bin`, `%JAVA_HOME%\bin`}
 
-	for _, addition := range additions {
-		if !containsPathEntry(newPath, addition) {
-			if newPath == "" {
-				newPath = addition
-			} else {
-				newPath = addition + ";" + newPath
+	// Strip any existing OctoJ entries from wherever they are in PATH
+	parts := strings.Split(currentPath, ";")
+	var kept []string
+	for _, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if trimmed == "" {
+			continue
+		}
+		isOctoJ := false
+		for _, e := range octojEntries {
+			if strings.EqualFold(trimmed, e) {
+				isOctoJ = true
+				break
 			}
+		}
+		if !isOctoJ {
+			kept = append(kept, trimmed)
 		}
 	}
 
-	if newPath != currentPath {
-		return k.SetExpandStringValue("PATH", newPath)
-	}
+	// Prepend OctoJ entries so they come first in User PATH
+	newPath := strings.Join(octojEntries, ";") + ";" + strings.Join(kept, ";")
+	newPath = strings.TrimSuffix(newPath, ";")
 
-	return nil
+	return k.SetExpandStringValue("PATH", newPath)
 }
 
 // containsPathEntry checks if a path entry exists in a semicolon-separated path string.

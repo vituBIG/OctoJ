@@ -172,10 +172,16 @@ func (p *Provider) doRequest(ctx context.Context, apiURL string) ([]byte, error)
 }
 
 // parseAdoptiumReleases converts the Adoptium API JSON response to JDKRelease slice.
+// The feature_releases endpoint returns a JSON array; release_name returns a single object.
 func parseAdoptiumReleases(data []byte, os, arch string) ([]providers.JDKRelease, error) {
 	var raw []adoptiumRelease
 	if err := json.Unmarshal(data, &raw); err != nil {
-		return nil, fmt.Errorf("failed to parse Adoptium response: %w", err)
+		// release_name endpoint returns a single object, not an array.
+		var single adoptiumRelease
+		if err2 := json.Unmarshal(data, &single); err2 != nil {
+			return nil, fmt.Errorf("failed to parse Adoptium response: %w", err)
+		}
+		raw = []adoptiumRelease{single}
 	}
 
 	if len(raw) == 0 {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/OctavoBit/octoj/internal/env"
+	"github.com/OctavoBit/octoj/internal/installer"
 	"github.com/OctavoBit/octoj/internal/storage"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -76,6 +77,10 @@ func runInit(apply bool) error {
 
 	if err := manager.Apply(); err != nil {
 		return fmt.Errorf("failed to apply environment changes: %w", err)
+	}
+
+	if err := installer.EnsureShims(store.BinDir()); err != nil {
+		log.Warn().Err(err).Msg("failed to create Java shims")
 	}
 
 	fmt.Println("Environment configured successfully!")

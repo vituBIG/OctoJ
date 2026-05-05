@@ -406,6 +406,12 @@ func (inst *Installer) Activate(release *providers.JDKRelease) error {
 		return fmt.Errorf("failed to create current link: %w", err)
 	}
 
+	// Create .cmd shims in the OctoJ bin dir so %OCTOJ_HOME%\bin in PATH
+	// always resolves to the active JDK, regardless of other Java installations.
+	if err := EnsureShims(inst.store.BinDir()); err != nil {
+		log.Warn().Err(err).Msg("failed to create Java shims")
+	}
+
 	log.Debug().
 		Str("provider", release.Provider).
 		Str("version", release.FullVersion).

@@ -162,7 +162,7 @@ func (p *Provider) getByReleaseName(ctx context.Context, releaseName, osName, ar
 		}
 	}
 
-	return nil, fmt.Errorf("Temurin release %s not found for %s/%s", releaseName, osName, arch)
+	return nil, fmt.Errorf("temurin release %s not found for %s/%s", releaseName, osName, arch)
 }
 
 // doRequest performs an HTTP GET and returns the response body bytes.
@@ -187,7 +187,7 @@ func (p *Provider) doRequest(ctx context.Context, apiURL string) ([]byte, error)
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Adoptium API returned HTTP %d: %s", resp.StatusCode, body)
+		return nil, fmt.Errorf("adoptium API returned HTTP %d: %s", resp.StatusCode, body)
 	}
 
 	return io.ReadAll(resp.Body)

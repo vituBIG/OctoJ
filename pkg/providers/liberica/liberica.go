@@ -89,7 +89,7 @@ func (p *Provider) GetRelease(ctx context.Context, version string, osName string
 				return &r, nil
 			}
 		}
-		return nil, fmt.Errorf("Liberica JDK %s not found for %s/%s", version, osName, arch)
+		return nil, fmt.Errorf("liberica JDK %s not found for %s/%s", version, osName, arch)
 	}
 	return &releases[0], nil
 }

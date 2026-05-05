@@ -25,9 +25,6 @@ func NewManager(octojHome string) (Manager, error) {
 	return &unixManager{octojHome: octojHome}, nil
 }
 
-func newUnixManager(octojHome string) Manager {
-	return &unixManager{octojHome: octojHome}
-}
 
 func (m *unixManager) Plan() ([]string, error) {
 	shell, rcFile, err := m.detectShell()

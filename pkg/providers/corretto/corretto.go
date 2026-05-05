@@ -65,7 +65,7 @@ func (p *Provider) Search(ctx context.Context, version string, os string, arch s
 	}
 
 	if !isSupportedVersion(version) {
-		return nil, fmt.Errorf("Corretto does not support Java %s — supported versions: %s",
+		return nil, fmt.Errorf("corretto does not support Java %s — supported versions: %s",
 			version, strings.Join(supportedVersions, ", "))
 	}
 
@@ -88,7 +88,7 @@ func (p *Provider) GetRelease(ctx context.Context, version string, os string, ar
 				return &r, nil
 			}
 		}
-		return nil, fmt.Errorf("Corretto JDK %s not found for %s/%s", version, os, arch)
+		return nil, fmt.Errorf("corretto JDK %s not found for %s/%s", version, os, arch)
 	}
 	return &releases[0], nil
 }
@@ -174,7 +174,7 @@ func (p *Provider) buildLatestRelease(ctx context.Context, version, os, arch str
 	log.Debug().Str("url", downloadURL).Msg("checking Corretto latest availability")
 
 	if err := p.checkExists(ctx, downloadURL); err != nil {
-		return nil, fmt.Errorf("Corretto JDK %s not available for %s/%s: %w", version, os, arch, err)
+		return nil, fmt.Errorf("corretto JDK %s not available for %s/%s: %w", version, os, arch, err)
 	}
 
 	ext := det.ArchiveExt()

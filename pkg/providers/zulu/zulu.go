@@ -96,7 +96,7 @@ func (p *Provider) GetRelease(ctx context.Context, version string, os string, ar
 				return &r, nil
 			}
 		}
-		return nil, fmt.Errorf("Zulu JDK %s not found for %s/%s", version, os, arch)
+		return nil, fmt.Errorf("zulu JDK %s not found for %s/%s", version, os, arch)
 	}
 	return &releases[0], nil
 }
@@ -119,7 +119,7 @@ func (p *Provider) doRequest(ctx context.Context, apiURL string) ([]byte, error)
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("Azul API returned HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+		return nil, fmt.Errorf("azul API returned HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
 
 	return io.ReadAll(resp.Body)

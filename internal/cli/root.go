@@ -26,7 +26,7 @@ func NewRootCmd() *cobra.Command {
 Manage multiple JDK versions across Temurin, Corretto, Zulu, and Liberica.
 
 Made with love by OctavoBit — https://github.com/vituBIG/OctoJ`,
-		Version: "0.1.0",
+		Version: currentVersion,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			return initConfig(cmd)
 		},

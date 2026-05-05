@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/OctavoBit/octoj/internal/platform"
 	"github.com/OctavoBit/octoj/internal/storage"
@@ -103,7 +104,25 @@ func runDoctor() error {
 			"java not found in PATH",
 		})
 	} else {
-		checks = append(checks, checkResult{"java in PATH", true, javaPath})
+		octojControlled := false
+		if store != nil {
+			octojBin := store.BinDir()
+			currentBin := filepath.Join(store.CurrentPath(), "bin")
+			javaLower := filepath.ToSlash(strings.ToLower(javaPath))
+			if strings.HasPrefix(javaLower, strings.ToLower(filepath.ToSlash(octojBin))) ||
+				strings.HasPrefix(javaLower, strings.ToLower(filepath.ToSlash(currentBin))) {
+				octojControlled = true
+			}
+		}
+		if octojControlled {
+			checks = append(checks, checkResult{"java in PATH", true, javaPath})
+		} else {
+			checks = append(checks, checkResult{
+				"java in PATH",
+				false,
+				fmt.Sprintf("%s shadows OctoJ — remove it from System PATH or uninstall it", javaPath),
+			})
+		}
 	}
 
 	// Check 6: current symlink/junction
@@ -123,7 +142,11 @@ func runDoctor() error {
 				target = currentPath
 			}
 			// Verify target exists
-			if _, err := os.Stat(filepath.Join(target, "bin", "java")); err != nil {
+			javaExeName := "java"
+			if runtime.GOOS == "windows" {
+				javaExeName = "java.exe"
+			}
+			if _, err := os.Stat(filepath.Join(target, "bin", javaExeName)); err != nil {
 				checks = append(checks, checkResult{
 					"current JDK symlink",
 					false,

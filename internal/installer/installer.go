@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -418,5 +419,26 @@ func (inst *Installer) Activate(release *providers.JDKRelease) error {
 		Str("current", currentPath).
 		Msg("activated JDK")
 
+	inst.warnIfJavaShadowed()
+
 	return nil
+}
+
+// warnIfJavaShadowed prints a warning when another Java installation in PATH would shadow OctoJ.
+func (inst *Installer) warnIfJavaShadowed() {
+	javaExe, err := exec.LookPath("java")
+	if err != nil {
+		return
+	}
+	octojBinDir := filepath.ToSlash(strings.ToLower(inst.store.BinDir()))
+	currentBinDir := filepath.ToSlash(strings.ToLower(filepath.Join(inst.store.CurrentPath(), "bin")))
+	javaLower := filepath.ToSlash(strings.ToLower(javaExe))
+
+	if !strings.HasPrefix(javaLower, octojBinDir) && !strings.HasPrefix(javaLower, currentBinDir) {
+		fmt.Printf("\nWARNING: 'java' in PATH resolves to %s\n", javaExe)
+		fmt.Println("         This installation shadows OctoJ. To fix it:")
+		fmt.Println("         1. Open System Properties → Environment Variables → System Variables → Path")
+		fmt.Println("         2. Remove or disable the entry for the competing Java installation")
+		fmt.Println("         3. Restart your terminal")
+	}
 }

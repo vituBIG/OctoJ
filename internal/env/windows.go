@@ -3,10 +3,13 @@
 package env
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"unicode/utf16"
 
 	"golang.org/x/sys/windows/registry"
 )
@@ -294,6 +297,78 @@ func (m *windowsManager) Remove() error {
 
 	broadcastEnvChange()
 	return nil
+}
+
+// readSystemPath reads the machine-level PATH from the registry.
+func readSystemPath() (string, error) {
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE,
+		`SYSTEM\CurrentControlSet\Control\Session Manager\Environment`,
+		registry.READ)
+	if err != nil {
+		return "", err
+	}
+	defer k.Close()
+	val, _, err := k.GetStringValue("PATH")
+	return val, err
+}
+
+// IsJavaInSystemPath reports whether javaExe lives inside any directory listed in the System PATH.
+func IsJavaInSystemPath(javaExe string) bool {
+	systemPath, err := readSystemPath()
+	if err != nil {
+		return false
+	}
+	javaLower := filepath.ToSlash(strings.ToLower(javaExe))
+	for _, entry := range strings.Split(systemPath, ";") {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		entryLower := strings.TrimSuffix(filepath.ToSlash(strings.ToLower(entry)), "/")
+		if strings.HasPrefix(javaLower, entryLower+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+// PrependToSystemPath adds OctoJ's bin directories at the front of the Windows System PATH.
+// It launches an elevated PowerShell process, which triggers a UAC prompt.
+func PrependToSystemPath(octojHome string) error {
+	binDir := octojHome + `\bin`
+	currentBinDir := octojHome + `\current\bin`
+
+	script := fmt.Sprintf(`
+$ErrorActionPreference = 'Stop'
+$regPath = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment'
+$currentPath = (Get-ItemProperty -Path $regPath -Name PATH).PATH
+$entries = $currentPath -split ';' | Where-Object { $_ -ne '' }
+$octojEntries = @('%s', '%s')
+$kept = $entries | Where-Object { $e = $_; -not ($octojEntries | Where-Object { $_ -ieq $e }) }
+$newPath = ($octojEntries + $kept) -join ';'
+Set-ItemProperty -Path $regPath -Name PATH -Value $newPath
+`, binDir, currentBinDir)
+
+	encoded := encodePSCommand(script)
+	cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command",
+		fmt.Sprintf(`Start-Process powershell.exe -ArgumentList '-NoProfile -NonInteractive -EncodedCommand %s' -Verb RunAs -Wait`, encoded))
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%w\n%s", err, strings.TrimSpace(string(output)))
+	}
+	broadcastEnvChange()
+	return nil
+}
+
+// encodePSCommand encodes a PowerShell script as UTF-16 LE base64 for use with -EncodedCommand.
+func encodePSCommand(script string) string {
+	u16 := utf16.Encode([]rune(script))
+	b := make([]byte, len(u16)*2)
+	for i, c := range u16 {
+		b[i*2] = byte(c)
+		b[i*2+1] = byte(c >> 8)
+	}
+	return base64.StdEncoding.EncodeToString(b)
 }
 
 // isWindowsBuild is used by env.go to select the right implementation.

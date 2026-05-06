@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/OctavoBit/octoj/internal/env"
 	"github.com/OctavoBit/octoj/internal/storage"
 	"github.com/OctavoBit/octoj/pkg/providers"
 	"github.com/rs/zerolog/log"
@@ -425,6 +426,8 @@ func (inst *Installer) Activate(release *providers.JDKRelease) error {
 }
 
 // warnIfJavaShadowed prints a warning when another Java installation in PATH would shadow OctoJ.
+// On Windows, if the competing Java is in the System PATH (which always precedes the User PATH),
+// it offers to fix the System PATH automatically via an elevated UAC prompt.
 func (inst *Installer) warnIfJavaShadowed() {
 	javaExe, err := exec.LookPath("java")
 	if err != nil {
@@ -434,11 +437,43 @@ func (inst *Installer) warnIfJavaShadowed() {
 	currentBinDir := filepath.ToSlash(strings.ToLower(filepath.Join(inst.store.CurrentPath(), "bin")))
 	javaLower := filepath.ToSlash(strings.ToLower(javaExe))
 
-	if !strings.HasPrefix(javaLower, octojBinDir) && !strings.HasPrefix(javaLower, currentBinDir) {
-		fmt.Printf("\nWARNING: 'java' in PATH resolves to %s\n", javaExe)
-		fmt.Println("         This installation shadows OctoJ. To fix it:")
-		fmt.Println("         1. Open System Properties → Environment Variables → System Variables → Path")
-		fmt.Println("         2. Remove or disable the entry for the competing Java installation")
-		fmt.Println("         3. Restart your terminal")
+	if strings.HasPrefix(javaLower, octojBinDir) || strings.HasPrefix(javaLower, currentBinDir) {
+		return
 	}
+
+	fmt.Printf("\nWARNING: 'java' in PATH resolves to %s\n", javaExe)
+
+	if env.IsJavaInSystemPath(javaExe) {
+		fmt.Println("         This Java is in the System PATH, which always takes priority over OctoJ's User PATH.")
+		fmt.Print("         Fix automatically? OctoJ will prepend itself to the System PATH (requires Administrator). [Y/n]: ")
+		var answer string
+		fmt.Scanln(&answer)
+		answer = strings.TrimSpace(strings.ToLower(answer))
+		if answer == "" || answer == "y" {
+			fmt.Print("         Requesting Administrator access... ")
+			if err := env.PrependToSystemPath(inst.store.Home()); err != nil {
+				fmt.Println("failed.")
+				fmt.Printf("         Error: %v\n", err)
+				printManualSystemPathFix()
+			} else {
+				fmt.Println("done.")
+				fmt.Println("         Restart your terminal for the changes to take effect.")
+			}
+		} else {
+			printManualSystemPathFix()
+		}
+		return
+	}
+
+	fmt.Println("         This installation shadows OctoJ. To fix it:")
+	fmt.Println("         1. Open System Properties → Environment Variables → User Variables → Path")
+	fmt.Println("         2. Remove or disable the entry for the competing Java installation")
+	fmt.Println("         3. Restart your terminal")
+}
+
+func printManualSystemPathFix() {
+	fmt.Println("         To fix manually:")
+	fmt.Println("         1. Open System Properties → Environment Variables → System Variables → Path")
+	fmt.Println("         2. Move OctoJ entries above the competing Java, or remove the competing entry")
+	fmt.Println("         3. Restart your terminal")
 }

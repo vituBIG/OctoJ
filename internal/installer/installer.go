@@ -447,7 +447,9 @@ func (inst *Installer) warnIfJavaShadowed() {
 		fmt.Println("         This Java is in the System PATH, which always takes priority over OctoJ's User PATH.")
 		fmt.Print("         Fix automatically? OctoJ will prepend itself to the System PATH (requires Administrator). [Y/n]: ")
 		var answer string
-		fmt.Scanln(&answer)
+		if _, err := fmt.Scanln(&answer); err != nil {
+			answer = ""
+		}
 		answer = strings.TrimSpace(strings.ToLower(answer))
 		if answer == "" || answer == "y" {
 			fmt.Print("         Requesting Administrator access... ")

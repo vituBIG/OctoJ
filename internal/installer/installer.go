@@ -443,9 +443,18 @@ func (inst *Installer) warnIfJavaShadowed() {
 
 	fmt.Printf("\nWARNING: 'java' in PATH resolves to %s\n", javaExe)
 
-	if env.IsJavaInSystemPath(javaExe) {
-		fmt.Println("         This Java is in the System PATH, which always takes priority over OctoJ's User PATH.")
-		fmt.Print("         Fix automatically? OctoJ will prepend itself to the System PATH (requires Administrator). [Y/n]: ")
+	inSystemPath := env.IsJavaInSystemPath(javaExe)
+	hasSystemJavaHome := env.HasSystemJavaHome()
+
+	if inSystemPath || hasSystemJavaHome {
+		fmt.Println("         OctoJ can fix this automatically (requires Administrator):")
+		if inSystemPath {
+			fmt.Println("           · Prepend OctoJ entries to System PATH")
+		}
+		if hasSystemJavaHome {
+			fmt.Println("           · Remove JAVA_HOME from System environment")
+		}
+		fmt.Print("         Proceed? [Y/n]: ")
 		var answer string
 		if _, err := fmt.Scanln(&answer); err != nil {
 			answer = ""

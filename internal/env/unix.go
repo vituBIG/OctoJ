@@ -239,5 +239,8 @@ func removeBlock(content string) string {
 // IsJavaInSystemPath always returns false on non-Windows systems.
 func IsJavaInSystemPath(_ string) bool { return false }
 
+// HasSystemJavaHome always returns false on non-Windows systems.
+func HasSystemJavaHome() bool { return false }
+
 // PrependToSystemPath is a no-op on non-Windows systems.
 func PrependToSystemPath(_ string) error { return nil }

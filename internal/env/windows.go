@@ -299,17 +299,29 @@ func (m *windowsManager) Remove() error {
 	return nil
 }
 
+// systemEnvKey is the registry path for machine-level environment variables.
+const systemEnvKey = `SYSTEM\CurrentControlSet\Control\Session Manager\Environment`
+
 // readSystemPath reads the machine-level PATH from the registry.
 func readSystemPath() (string, error) {
-	k, err := registry.OpenKey(registry.LOCAL_MACHINE,
-		`SYSTEM\CurrentControlSet\Control\Session Manager\Environment`,
-		registry.READ)
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE, systemEnvKey, registry.READ)
 	if err != nil {
 		return "", err
 	}
 	defer k.Close()
 	val, _, err := k.GetStringValue("PATH")
 	return val, err
+}
+
+// HasSystemJavaHome reports whether JAVA_HOME is set in the machine-level environment.
+func HasSystemJavaHome() bool {
+	k, err := registry.OpenKey(registry.LOCAL_MACHINE, systemEnvKey, registry.READ)
+	if err != nil {
+		return false
+	}
+	defer k.Close()
+	_, _, err = k.GetStringValue("JAVA_HOME")
+	return err == nil
 }
 
 // IsJavaInSystemPath reports whether javaExe lives inside any directory listed in the System PATH.
@@ -341,12 +353,17 @@ func PrependToSystemPath(octojHome string) error {
 	script := fmt.Sprintf(`
 $ErrorActionPreference = 'Stop'
 $regPath = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment'
+
 $currentPath = (Get-ItemProperty -Path $regPath -Name PATH).PATH
 $entries = $currentPath -split ';' | Where-Object { $_ -ne '' }
 $octojEntries = @('%s', '%s')
 $kept = $entries | Where-Object { $e = $_; -not ($octojEntries | Where-Object { $_ -ieq $e }) }
 $newPath = ($octojEntries + $kept) -join ';'
 Set-ItemProperty -Path $regPath -Name PATH -Value $newPath
+
+if (Get-ItemProperty -Path $regPath -Name JAVA_HOME -ErrorAction SilentlyContinue) {
+    Remove-ItemProperty -Path $regPath -Name JAVA_HOME
+}
 `, binDir, currentBinDir)
 
 	encoded := encodePSCommand(script)
